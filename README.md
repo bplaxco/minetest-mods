@@ -23,5 +23,5 @@ Run the unit tests
 
 ## Contributors
 
-* bplaxco (Code-n-Such)
-* jplaxco (Artwork)
+* bplaxco
+* jplaxco
