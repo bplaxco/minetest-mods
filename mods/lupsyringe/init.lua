@@ -12,7 +12,7 @@ minetest.register_tool("lupsyringe:syringe_poison", {
   on_use = minetest.item_eat(-20, "lupsyringe:syringe_empty 1"),
 })
 
-minetest.register_craftitem("lupsyringe:syringe_empty", {
+minetest.register_tool("lupsyringe:syringe_empty", {
   description = "Empty Syringe",
   inventory_image = "lupsyringe_empty.png",
   groups = {tool = 1},
