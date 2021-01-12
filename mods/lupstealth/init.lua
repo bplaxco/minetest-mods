@@ -1,4 +1,4 @@
-local function set_alpha(player, a)
+local function set_alpha(name, a)
   local player = minetest.get_player_by_name(name)
 
   if not player then
