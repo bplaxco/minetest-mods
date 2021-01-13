@@ -1,4 +1,34 @@
+-- Lantern
+
+minetest.register_node("luplights:lantern", {
+  description = "Lantern",
+  inventory_image = "luplights_lantern.png",
+  wield_image = "luplights_lantern.png",
+  paramtype = "light",
+  drawtype = "torchlike",
+  light_source = minetest.LIGHT_MAX,
+  sunlight_propagates = true,
+  groups = {flammable = 1, torch = 1},
+  walkable = false,
+  drop = "luplights:lantern",
+  tiles = {{name = "luplights_lantern.png"}},
+  on_place = function(_, _, _)
+    -- TODO: define a mesh so the lantern can be placed
+  end,
+})
+
+minetest.register_craft({
+  output = "luplights:lantern",
+  recipe = {
+    {"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
+    {"default:glass", "default:torch", "default:glass"},
+    {"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
+  }
+})
+
+
 -- Illumination code adapted from https://notabug.org/Piezo_/minetest-illumination/src/master/init.lua
+
 local player_lights = {}
 
 local function register_light_point(name, def)
@@ -18,12 +48,19 @@ local function register_light_point(name, def)
   })
 end
 
+local function inventory_light_source(player)
+  if player:get_inventory():contains_item("main", "luplights:lantern") then
+    return minetest.registered_nodes["luplights:lantern"].light_source
+  else
+    return 0
+  end
+end
+
 local function on_joinplayer(player)
   --
   -- Init player light data structure
   --
   player_lights[player:get_player_name()] = {
-    bright = 0,
     pos = vector.new(player:get_pos())
   }
 end
@@ -66,15 +103,10 @@ end
 
 local function globalstep(dtime)
   --
+  -- Light the area
   --
   for _, player in ipairs(minetest.get_connected_players()) do
     if player_lights[player:get_player_name()] then
-      local light = 0
-
-      if minetest.registered_nodes[player:get_wielded_item():get_name()] then
-        light = minetest.registered_nodes[player:get_wielded_item():get_name()].light_source
-      end
-
       local pos = player:get_pos()
 
       pos.x = math.floor(pos.x + 0.5)
@@ -110,8 +142,14 @@ local function globalstep(dtime)
       player_lights[player:get_player_name()] = {}
 
       if can_light(pos) then
-        player_lights[player:get_player_name()].bright = light
         player_lights[player:get_player_name()].pos = pos
+
+        local light = inventory_light_source(player)
+        local wielded_node = minetest.registered_nodes[player:get_wielded_item():get_name()]
+
+        if wielded_node and wielded_node.light_source > light then
+          light = wielded_node.light_source
+        end
 
         if light > 13 then
           minetest.set_node(pos, {name = "luplights:light_full"})
@@ -148,22 +186,8 @@ minetest.register_abm({
     "luplights:light_faint",
     "luplights:light_dim",
     "luplights:light_mid",
-    "luplights:light_full"
+    "luplights:light_full",
   },
 })
 
-minetest.register_craftitem("luplights:lantern", {
-  description = "Lantern",
-  inventory_image = "luplights_lantern.png",
-  light_source = 15,
-  groups = {flammable = 1, torch = 1}
-})
 
-minetest.register_craft({
-  output = "luplights:lantern",
-  recipe = {
-    {"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
-    {"default:glass", "default:torch", "default:glass"},
-    {"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
-  }
-})
