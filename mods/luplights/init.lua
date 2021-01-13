@@ -151,3 +151,19 @@ minetest.register_abm({
     "luplights:light_full"
   },
 })
+
+minetest.register_craftitem("luplights:lantern", {
+  description = "Lantern",
+  inventory_image = "luplights_lantern.png",
+  light_source = 15,
+  groups = {flammable = 1, torch = 1}
+})
+
+minetest.register_craft({
+  output = "luplights:lantern",
+  recipe = {
+    {"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
+    {"default:glass", "default:torch", "default:glass"},
+    {"default:steel_ingot", "default:steel_ingot", "default:steel_ingot"},
+  }
+})
