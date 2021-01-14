@@ -2,9 +2,7 @@
 -- Define the luplights API ---------------------------------------------------
 -------------------------------------------------------------------------------
 
-luplights = {
-  player_lights = {},
-}
+luplights = {}
 
 function luplights.register_light_point(name, def)
   --
@@ -24,7 +22,7 @@ function luplights.register_light_point(name, def)
   })
 end
 
-function luplights.inventory_light_source(player)
+function luplights.inventory_light(player)
   --
   -- Returns the light source value of what's in the player's inventory
   --
@@ -35,52 +33,23 @@ function luplights.inventory_light_source(player)
   end
 end
 
-function luplights.init_player_light(player)
-  --
-  -- Init player light data structure
-  --
-  luplights.player_lights[player:get_player_name()] = {
-    pos = vector.new(player:get_pos())
-  }
-end
+function luplights.wielded_light(player)
+  local wielded_node = minetest.registered_nodes[player:get_wielded_item():get_name()]
 
-function luplights.remove_player_light(to_remove)
-  --
-  -- Remove reference to lights
-  --
-  local new_player_lights = {}
-  local to_remove_name = to_remove:get_player_name()
-
-  for _, player in pairs(minetest.get_connected_players()) do
-    local name = player:get_player_name()
-    if name ~= to_remove_name then
-      new_player_lights[online_name] = luplights.player_lights[online_name]
-    end
-  end
-
-  luplights.player_lights = new_player_lights
-end
-
-function luplights.light_pos(player)
-  --
-  -- Returns the postion of a player light if it exists else nil
-  --
-  light = luplights.player_lights[player:get_player_name()]
-
-  if light then
-    return light.pos
+  if wielded_node and  wielded_node.light_source then
+    return wielded_node.light_source
   else
-    return nil
+    return 0
   end
 end
 
-
-function luplights.remove_abandoned_node(pos)
+function luplights.garbage_collect_light_points(pos)
   --
-  -- Clean up any left over blocks
+  -- Clean blocks away from the player
   --
   for _, player in ipairs(minetest.get_connected_players()) do
-    if vector.equals(luplights.light_pos(player), pos) then
+    local light_pos = luplights.lightable_pos(player)
+    if light_pos and vector.equals(light_pos, pos) then
       return
     end
   end
@@ -101,56 +70,69 @@ function luplights.lightable(pos)
   )
 end
 
-local function globalstep(dtime)
+function luplights.player_light(player)
+  local inventory = luplights.inventory_light(player)
+
+  if inventory == minetest.LIGHT_MAX then
+    return inventory
+  end
+
+  local wielded = luplights.wielded_light(player)
+
+  if wielded > inventory then
+    return wielded
+  else
+    return inventory
+  end
+end
+
+function luplights.lightable_pos(player)
+  local pos = player:get_pos()
+
+  pos.x = math.floor(pos.x + 0.5)
+  pos.y = math.floor(pos.y + 0.5)
+  pos.z = math.floor(pos.z + 0.5)
+
+  if luplights.lightable(pos) then
+    return pos
+  elseif luplights.lightable({x = pos.x, y = pos.y + 1, z = pos.z}) then
+    return {x = pos.x, y = pos.y + 1, z = pos.z}
+  elseif luplights.lightable({x = pos.x, y = pos.y + 2, z = pos.z}) then
+    return {x = pos.x, y = pos.y + 2, z = pos.z}
+  elseif luplights.lightable({x = pos.x, y = pos.y - 1, z = pos.z}) then
+    return {x = pos.x, y = pos.y - 1, z = pos.z}
+  elseif luplights.lightable({x = pos.x + 1, y = pos.y, z = pos.z}) then
+    return {x = pos.x + 1, y = pos.y, z = pos.z}
+  elseif luplights.lightable({x = pos.x, y = pos.y, z = pos.z + 1}) then
+      return {x = pos.x, y = pos.y, z = pos.z + 1}
+  elseif luplights.lightable({x = pos.x - 1, y = pos.y, z = pos.z}) then
+    return {x = pos.x - 1, y = pos.y, z = pos.z}
+  elseif luplights.lightable({x = pos.x, y = pos.y, z = pos.z - 1}) then
+    return {x = pos.x, y = pos.y, z = pos.z - 1}
+  elseif luplights.lightable({x = pos.x + 1, y = pos.y + 1, z = pos.z}) then
+    pos = {x = pos.x + 1, y = pos.y + 1, z = pos.z}
+  elseif luplights.lightable({x = pos.x - 1, y = pos.y + 1, z = pos.z}) then
+    return {x = pos.x - 1, y = pos.y + 1, z = pos.z}
+  elseif luplights.lightable({x = pos.x, y = pos.y + 1, z = pos.z + 1}) then
+    return {x = pos.x, y = pos.y + 1, z = pos.z + 1}
+  elseif luplights.lightable({x = pos.x, y = pos.y + 1, z = pos.z - 1}) then
+    return {x = pos.x, y = pos.y + 1, z = pos.z - 1}
+  else
+    return nil
+  end
+end
+
+function luplights.emit_player_light()
   --
   -- Light the area
   --
   for _, player in ipairs(minetest.get_connected_players()) do
-    if luplights.player_lights[player:get_player_name()] then
-      local pos = player:get_pos()
+    local light = luplights.player_light(player)
 
-      pos.x = math.floor(pos.x + 0.5)
-      pos.y = math.floor(pos.y + 0.5)
-      pos.z = math.floor(pos.z + 0.5)
+    if light > 0 then
+      local pos = luplights.lightable_pos(player)
 
-      if not luplights.lightable(pos) then
-        if luplights.lightable({x = pos.x, y = pos.y + 1, z = pos.z}) then
-          pos = {x = pos.x, y = pos.y + 1, z = pos.z}
-        elseif luplights.lightable({x = pos.x, y = pos.y + 2, z = pos.z}) then
-          pos = {x = pos.x, y = pos.y + 2, z = pos.z}
-        elseif luplights.lightable({x = pos.x, y = pos.y - 1, z = pos.z}) then
-          pos = {x = pos.x, y = pos.y - 1, z = pos.z}
-        elseif luplights.lightable({x = pos.x + 1, y = pos.y, z = pos.z}) then
-          pos = {x = pos.x + 1, y = pos.y, z = pos.z}
-        elseif luplights.lightable({x = pos.x, y = pos.y, z = pos.z + 1}) then
-          pos = {x = pos.x, y = pos.y, z = pos.z + 1}
-        elseif luplights.lightable({x = pos.x - 1, y = pos.y, z = pos.z}) then
-          pos = {x = pos.x - 1, y = pos.y, z = pos.z}
-        elseif luplights.lightable({x = pos.x, y = pos.y, z = pos.z - 1}) then
-          pos = {x = pos.x, y = pos.y, z = pos.z - 1}
-        elseif luplights.lightable({x = pos.x + 1, y = pos.y + 1, z = pos.z}) then
-          pos = {x = pos.x + 1, y = pos.y + 1, z = pos.z}
-        elseif luplights.lightable({x = pos.x - 1, y = pos.y + 1, z = pos.z}) then
-          pos = {x = pos.x - 1, y = pos.y + 1, z = pos.z}
-        elseif luplights.lightable({x = pos.x, y = pos.y + 1, z = pos.z + 1}) then
-          pos = {x = pos.x, y = pos.y + 1, z = pos.z + 1}
-        elseif luplights.lightable({x = pos.x, y = pos.y + 1, z = pos.z - 1}) then
-          pos = {x = pos.x, y = pos.y + 1, z = pos.z - 1}
-        end
-      end
-
-      luplights.player_lights[player:get_player_name()] = {}
-
-      if luplights.lightable(pos) then
-        luplights.player_lights[player:get_player_name()].pos = pos
-
-        local light = luplights.inventory_light_source(player)
-        local wielded_node = minetest.registered_nodes[player:get_wielded_item():get_name()]
-
-        if wielded_node and wielded_node.light_source > light then
-          light = wielded_node.light_source
-        end
-
+      if pos then
         if light > 13 then
           minetest.set_node(pos, {name = "luplights:light_full"})
         elseif light > 10 then
@@ -163,12 +145,6 @@ local function globalstep(dtime)
           minetest.set_node(pos, {name = "air"})
         end
       end
-
-      local player_pos = luplights.player_lights[player:get_player_name()].pos
-
-      if player_pos and luplights.lightable(player_pos) and not vector.equals(pos, player_pos) then
-        minetest.remove_node(player_pos)
-      end
     end
   end
 end
@@ -177,6 +153,13 @@ end
 -------------------------------------------------------------------------------
 -- Register nodes and callbaks ------------------------------------------------
 -------------------------------------------------------------------------------
+
+luplights.register_light_point("luplights:light_faint", {light_source = 4})
+luplights.register_light_point("luplights:light_dim", {light_source = 8})
+luplights.register_light_point("luplights:light_mid", {light_source = 12})
+luplights.register_light_point("luplights:light_full", {light_source = minetest.LIGHT_MAX})
+
+minetest.register_globalstep(luplights.emit_player_light)
 
 minetest.register_node("luplights:lantern", {
   description = "Lantern",
@@ -190,7 +173,7 @@ minetest.register_node("luplights:lantern", {
   walkable = false,
   drop = "luplights:lantern",
   tiles = {{name = "luplights_lantern.png"}},
-  on_place = function(_, _, _)
+  on_place = function()
     -- TODO: define a mesh so the lantern can be placed
   end,
 })
@@ -204,16 +187,10 @@ minetest.register_craft({
   }
 })
 
-luplights.register_light_point("luplights:light_faint", {light_source = 4})
-luplights.register_light_point("luplights:light_dim", {light_source = 8})
-luplights.register_light_point("luplights:light_mid", {light_source = 12})
-luplights.register_light_point("luplights:light_full", {light_source = 15})
 
-minetest.register_on_joinplayer(luplights.init_player_light)
-minetest.register_on_leaveplayer(luplights.remove_player_light)
-minetest.register_globalstep(globalstep)
 minetest.register_abm({
-  interval = 1, chance = 1, action = luplights.remove_abandoned_node, nodenames = {
+  action = luplights.garbage_collect_light_points,
+  interval = 1, chance = 1, nodenames = {
     "luplights:light_faint",
     "luplights:light_dim",
     "luplights:light_mid",
