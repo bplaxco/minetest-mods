@@ -9,10 +9,18 @@ assert(luplights, "luplights should exist")
 -- Test lightable
 assert(not luplights.lightable(minetest.mock_pos.dirt), "should not be able to light dirt")
 assert(luplights.lightable(minetest.mock_pos.air), "should be able to light air")
-assert(luplights.lightable(minetest.mock_pos.light_faint), "should be able to light luplights:light_faint")
-assert(luplights.lightable(minetest.mock_pos.light_dim), "should be able to light luplights:light_dim")
-assert(luplights.lightable(minetest.mock_pos.light_mid), "should be able to light luplights:light_mid")
-assert(luplights.lightable(minetest.mock_pos.light_full), "should be able to light luplights:light_full")
+assert(not luplights.lightable(minetest.mock_pos.light_faint), "should be able to light luplights:light_faint")
+assert(not luplights.lightable(minetest.mock_pos.light_dim), "should be able to light luplights:light_dim")
+assert(not luplights.lightable(minetest.mock_pos.light_mid), "should be able to light luplights:light_mid")
+assert(not luplights.lightable(minetest.mock_pos.light_full), "should be able to light luplights:light_full")
+
+-- Test lit
+assert(not luplights.lit(minetest.mock_pos.dirt), "dirt shouldn't be lit")
+assert(not luplights.lit(minetest.mock_pos.air), "air shouldn't be lit")
+assert(luplights.lit(minetest.mock_pos.light_faint), "luplights:light_faint should be lit")
+assert(luplights.lit(minetest.mock_pos.light_dim), "luplights:light_dim should be lit")
+assert(luplights.lit(minetest.mock_pos.light_mid), "luplights:light_mid should be lit")
+assert(luplights.lit(minetest.mock_pos.light_full), "luplights:light_full should be lit")
 
 -- Test inventory_light
 player.inventory.main["luplights:lantern"] = true
