@@ -4,9 +4,9 @@
 
 luplights = {}
 
-function luplights.register_light_point(name, def)
+function luplights.register_light_node(name, def)
   --
-  -- Register a light point node
+  -- Register a light node
   --
   local def = def or {}
   minetest.register_node(name, {
@@ -37,10 +37,10 @@ function luplights.wielded_light_source(player)
   --
   -- Return the light source value of the wielded item
   --
-  local wielded_node = minetest.registered_nodes[player:get_wielded_item():get_name()]
+  local wielded = minetest.registered_nodes[player:get_wielded_item():get_name()]
 
-  if wielded_node and wielded_node.light_source then
-    return wielded_node.light_source
+  if wielded and wielded.light_source then
+    return wielded.light_source
   else
     return 0
   end
@@ -65,7 +65,7 @@ function luplights.player_light_source(player)
   end
 end
 
-function luplights.garbage_collect_light_points(pos)
+function luplights.garbage_collect_light_nodes(pos)
   --
   -- Garbage collect light sources as the player moves away from them
   --
@@ -98,29 +98,11 @@ function luplights.lit(pos)
   )
 end
 
-function luplights.new_player_light(player)
-  --
-  -- Return light source and position of the light if a new one is needed
-  --
-
-  if luplights.player_area_match(player, luplights.lit) then
-    return 0, nil
-  end
-
-  local pos = luplights.player_area_match(player, luplights.lightable)
-
-  if not pos then
-    return 0, nil
-  else
-    return luplights.player_light_source(player), pos
-  end
-end
 
 function luplights.player_area_match(player, matches)
   --
   -- Return a position that the match function returns true on
   --
-
   local pos = vector.round(player:get_pos())
   pos.y = pos.y + 1
 
@@ -131,38 +113,46 @@ function luplights.player_area_match(player, matches)
   end
 end
 
-function luplights.emit_player_light()
+function luplights.emit_player_light(player)
   --
-  -- Light the area
+  -- Emit light as a player
   --
-  for _, player in ipairs(minetest.get_connected_players()) do
-    local light, pos = luplights.new_player_light(player)
 
-    if light > 0 then
-      if light > 13 then
-      minetest.set_node(pos, {name = "luplights:light_full"})
-      elseif light > 10 then
-      minetest.set_node(pos, {name = "luplights:light_mid"})
-      elseif light > 7 then
-        minetest.set_node(pos, {name = "luplights:light_dim"})
-      elseif light > 2 then
-        minetest.set_node(pos, {name = "luplights:light_faint"})
-      end
-    end
+  if luplights.player_area_match(player, luplights.lit) then
+    return
+  end
+
+  local pos = luplights.player_area_match(player, luplights.lightable)
+
+  if not pos then
+    return
+  end
+
+  local light = luplights.player_light_source(player)
+
+  if light == 0 then
+    return
+  end
+
+  if light > 13 then
+    minetest.set_node(pos, {name = "luplights:light_full"})
+  elseif light > 10 then
+    minetest.set_node(pos, {name = "luplights:light_mid"})
+  elseif light > 7 then
+    minetest.set_node(pos, {name = "luplights:light_dim"})
+  elseif light > 2 then
+    minetest.set_node(pos, {name = "luplights:light_faint"})
   end
 end
-
 
 -------------------------------------------------------------------------------
 -- Register nodes and callbaks ------------------------------------------------
 -------------------------------------------------------------------------------
 
-luplights.register_light_point("luplights:light_faint", {light_source = 4})
-luplights.register_light_point("luplights:light_dim", {light_source = 8})
-luplights.register_light_point("luplights:light_mid", {light_source = 12})
-luplights.register_light_point("luplights:light_full", {light_source = minetest.LIGHT_MAX})
-
-minetest.register_globalstep(luplights.emit_player_light)
+luplights.register_light_node("luplights:light_faint", {light_source = 4})
+luplights.register_light_node("luplights:light_dim", {light_source = 8})
+luplights.register_light_node("luplights:light_mid", {light_source = 12})
+luplights.register_light_node("luplights:light_full", {light_source = minetest.LIGHT_MAX})
 
 minetest.register_node("luplights:lantern", {
   description = "Lantern",
@@ -191,7 +181,7 @@ minetest.register_craft({
 })
 
 minetest.register_abm({
-  action = luplights.garbage_collect_light_points,
+  action = luplights.garbage_collect_light_nodes,
   interval = 1, chance = 1, nodenames = {
     "luplights:light_faint",
     "luplights:light_dim",
@@ -199,3 +189,12 @@ minetest.register_abm({
     "luplights:light_full",
   },
 })
+
+minetest.register_globalstep(
+  function()
+    for _, player in ipairs(minetest.get_connected_players()) do
+      luplights.emit_player_light(player)
+    end
+  end
+)
+

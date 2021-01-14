@@ -29,14 +29,14 @@ assert(minetest.LIGHT_MAX == luplights.inventory_light_source(player), "lantern 
 player.inventory["main"]["luplights:lantern"] = false
 assert(0 == luplights.inventory_light_source(player), "0 if lantern not present")
 
--- Test register_light_point
-luplights.register_light_point("test:test_1")
-assert(minetest.registered_nodes["test:test_1"].drawtype == "airlike", "light points should be airlike")
-assert(minetest.registered_nodes["test:test_1"].light_source == 4, "light points should default to 4")
+-- Test register_light_node
+luplights.register_light_node("test:test_1")
+assert(minetest.registered_nodes["test:test_1"].drawtype == "airlike", "light nodes should be airlike")
+assert(minetest.registered_nodes["test:test_1"].light_source == 4, "light nodes should default to 4")
 
-luplights.register_light_point("test:test_1", {light_source = 10})
-assert(minetest.registered_nodes["test:test_1"].drawtype == "airlike", "light points should be airlike")
-assert(minetest.registered_nodes["test:test_1"].light_source == 10, "light points should setable")
+luplights.register_light_node("test:test_1", {light_source = 10})
+assert(minetest.registered_nodes["test:test_1"].drawtype == "airlike", "light nodes should be airlike")
+assert(minetest.registered_nodes["test:test_1"].light_source == 10, "light nodes should setable")
 
 -- Done!
 print("luplights passed!")
