@@ -14,4 +14,4 @@ link: linkmods
 
 .PHONY: test
 test:
-	@find tests -name '*.lua' -exec lua {} + || echo "Tests Pass"
+	@find tests -name '*.lua' -exec lua {} +
