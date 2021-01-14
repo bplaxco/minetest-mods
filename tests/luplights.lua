@@ -22,12 +22,12 @@ assert(luplights.lit(minetest.mock_pos.light_dim), "luplights:light_dim should b
 assert(luplights.lit(minetest.mock_pos.light_mid), "luplights:light_mid should be lit")
 assert(luplights.lit(minetest.mock_pos.light_full), "luplights:light_full should be lit")
 
--- Test inventory_light
+-- Test inventory_light_source
 player.inventory.main["luplights:lantern"] = true
-assert(minetest.LIGHT_MAX == luplights.inventory_light(player), "lantern should set inventory light to max")
+assert(minetest.LIGHT_MAX == luplights.inventory_light_source(player), "lantern should set inventory light to max")
 
 player.inventory["main"]["luplights:lantern"] = false
-assert(0 == luplights.inventory_light(player), "0 if lantern not present")
+assert(0 == luplights.inventory_light_source(player), "0 if lantern not present")
 
 -- Test register_light_point
 luplights.register_light_point("test:test_1")
