@@ -34,9 +34,12 @@ function luplights.inventory_light(player)
 end
 
 function luplights.wielded_light(player)
+  --
+  -- Return the light source value from the item the player is wielding
+  --
   local wielded_node = minetest.registered_nodes[player:get_wielded_item():get_name()]
 
-  if wielded_node and  wielded_node.light_source then
+  if wielded_node and wielded_node.light_source then
     return wielded_node.light_source
   else
     return 0
@@ -71,6 +74,9 @@ function luplights.lightable(pos)
 end
 
 function luplights.player_light(player)
+  --
+  -- Return light source and position of the light
+  --
   local pos = luplights.lightable_pos(player)
 
   if not pos then
