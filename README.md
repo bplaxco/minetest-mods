@@ -10,14 +10,14 @@ an issue on GitHub and I'll try to take a look.
 
 ## Make targets
 
-Currently these targets only support Linux systems, but the mods should run on
+Currently these targets only support `*nix` systems, but the mods should run on
 any current Minetest version.
 
 ### `link`
 
 Symlink the mod folders into the games mods folder
 
-### `test` (TODO)
+### `test`
 
 Run the unit tests
 
