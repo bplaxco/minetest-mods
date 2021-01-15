@@ -30,7 +30,20 @@ local function queue_poops()
 end
 
 local function fertalize(itemstack, user, pointed_thing)
-  -- TODO
+  if not pointed_thing then
+    return
+  end
+
+  if pointed_thing.type == "node" then
+    local pos = pointed_thing.under
+    local node = minetest.get_node(pos)
+
+    if node and node.name:match(".*sapling") and itemstack:take_item() ~= nil then
+      default.grow_sapling(pos)
+    end
+  end
+
+  return itemstack
 end
 
 minetest.register_craftitem("luppoop:poop", {
