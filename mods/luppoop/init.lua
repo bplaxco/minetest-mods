@@ -1,6 +1,10 @@
-local poop_interval = 600
+local poop_interval = 30
+local poop_to_fertalize = 3
 
 local function player_is_connected(player)
+  --
+  -- Check if player is connected
+  --
   for _, connected in ipairs(minetest.get_connected_players()) do
     if player:get_player_name() == connected:get_player_name() then
       return true
@@ -11,6 +15,9 @@ local function player_is_connected(player)
 end
 
 local function poop(player)
+  --
+  -- Drop poop
+  --
   if player_is_connected(player) then
     minetest.sound_play("luppoop_poop", {pos = player:get_pos()}, true)
     minetest.item_drop(ItemStack("luppoop:poop"), nil, player:get_pos())
@@ -18,10 +25,16 @@ local function poop(player)
 end
 
 local function queue_poop(player)
-  minetest.after(math.random(poop_interval / 2) + poop_interval / 2, poop, player)
+  --
+  -- Queue up random poop for player
+  --
+  minetest.after(math.random(poop_interval), poop, player)
 end
 
 local function queue_poops()
+  --
+  -- Queue up poops for all connected players
+  --
   for _, player in ipairs(minetest.get_connected_players()) do
     queue_poop(player)
   end
@@ -30,7 +43,12 @@ local function queue_poops()
 end
 
 local function fertalize(itemstack, user, pointed_thing)
-  if not pointed_thing then
+  --
+  -- Use $poop_to_fertalize poop to fertalize something
+  --
+  -- TODO: support more node types
+  --
+  if not pointed_thing or itemstack:get_count() < poop_to_fertalize then
     return
   end
 
@@ -38,7 +56,7 @@ local function fertalize(itemstack, user, pointed_thing)
     local pos = pointed_thing.under
     local node = minetest.get_node(pos)
 
-    if node and node.name:match(".*sapling") and itemstack:take_item() ~= nil then
+    if node and node.name:match("default:.*sapling") and itemstack:take_item(poop_to_fertalize) ~= nil then
       default.grow_sapling(pos)
     end
   end
