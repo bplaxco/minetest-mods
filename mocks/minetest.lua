@@ -1,6 +1,7 @@
 minetest = {
   LIGHT_MAX = 14,
   registered_nodes = {},
+  registered_tools = {},
   mock_pos = {
     dirt = "dirt", air = "air",
     light_faint = "luplights:light_faint",
@@ -15,23 +16,22 @@ function minetest.register_node(name, def)
 end
 
 function minetest.register_craft()
+end
 
+function minetest.register_tool(name, def)
+  minetest.registered_tools[name] = def
 end
 
 function minetest.register_on_joinplayer()
-
 end
 
 function minetest.register_on_leaveplayer()
-
 end
 
 function minetest.register_globalstep()
-
 end
 
 function minetest.register_abm()
-
 end
 
 function minetest.get_node(pos)
@@ -41,3 +41,7 @@ end
 function minetest.get_connected_players(pos)
   return {player}
 end
+
+function minetest.item_eat()
+end
+
