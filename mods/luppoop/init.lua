@@ -55,8 +55,10 @@ local function fertalize(itemstack, user, pointed_thing)
   if pointed_thing.type == "node" then
     local pos = pointed_thing.under
     local node = minetest.get_node(pos)
+    local is_sapling = node and node.name:match("default:.*sapling")
 
-    if node and node.name:match("default:.*sapling") and itemstack:take_item(poop_to_fertalize) ~= nil then
+    if is_sapling and default.can_grow(pos) then
+      itemstack:take_item(poop_to_fertalize)
       default.grow_sapling(pos)
     end
   end
