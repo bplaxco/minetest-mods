@@ -1,6 +1,6 @@
 player = {
   inventory = {
-    main = {}
+    main = {},
   }
 }
 
@@ -18,4 +18,8 @@ end
 
 function player:get_pos()
   return player.pos
+end
+
+function player:get_wielded_item()
+  return player.inventory.wielded
 end
