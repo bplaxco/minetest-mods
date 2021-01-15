@@ -44,4 +44,3 @@ end
 
 function minetest.item_eat()
 end
-
