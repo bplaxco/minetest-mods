@@ -1,4 +1,4 @@
-local poop_interval = 30
+local poop_interval = 600
 local poop_to_fertalize = 3
 
 local function player_is_connected(player)
