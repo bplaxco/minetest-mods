@@ -1,10 +1,10 @@
 minetest.register_node("luphanukkah:dreidel_exploding", {
+  description = "Just a harmless dreidel",
   drawtype = "mesh",
   mesh = "luphanukkah_dreidel.obj",
-  description = "Just a harmless dreidel",
   visual = "mesh",
-  tiles =  {"luphanukkah_dreidel.png"},
   groups = {tnt = 1, dig_immediate = 2},
+  tiles =  {"luphanukkah_dreidel.png"},
   on_punch = function(pos, node, puncher)
 		if puncher:get_wielded_item():get_name() == "default:torch" then
       tnt.burn(pos, node.name)
