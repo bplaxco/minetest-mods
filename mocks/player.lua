@@ -21,5 +21,7 @@ function player:get_pos()
 end
 
 function player:get_wielded_item()
-  return player.inventory.wielded
+  return player.inventory.wielded or {
+    get_name = function() return nil end
+  }
 end

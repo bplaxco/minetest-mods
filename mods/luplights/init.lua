@@ -2,9 +2,124 @@
 -- Define the luplights API ---------------------------------------------------
 -------------------------------------------------------------------------------
 
-luplights = {}
+local function inventory_light_source(player)
+  --
+  -- Returns eligibile inventory light source values
+  --
+  if player:get_inventory():contains_item("main", "luplights:lantern") then
+    return minetest.registered_nodes["luplights:lantern"].light_source
+  else
+    return 0
+  end
+end
 
-function luplights.register_light_node(name, def)
+local function wielded_light_source(player)
+  --
+  -- Return the light source value of the wielded item
+  --
+  local wielded = minetest.registered_nodes[player:get_wielded_item():get_name()]
+  return wielded and wielded.light_source or 0
+end
+
+local function player_light_source(player)
+  --
+  -- Return the effective light source value for the player
+  --
+  local inventory = inventory_light_source(player)
+
+  if inventory == minetest.LIGHT_MAX then
+    return inventory
+  end
+
+  local wielded = wielded_light_source(player)
+
+  if wielded > inventory then
+    return wielded
+  else
+    return inventory
+  end
+end
+
+local function lightable(pos)
+  --
+  -- Can a light block be placed here
+  --
+  return minetest.get_node(pos).name == "air"
+end
+
+local function lit(pos)
+  --
+  -- This area is lit
+  --
+  local name = minetest.get_node(pos).name
+
+  return (
+    name == "luplights:light_full" or name == "luplights:light_mid" or
+    name == "luplights:light_dim" or name == "luplights:light_faint"
+  )
+end
+
+local function player_area_match(player, matches)
+  --
+  -- Return a position that the match function returns true on
+  --
+  local pos = vector.round(player:get_pos())
+  pos.y = pos.y + 1
+
+  if matches(pos) then
+    return pos
+  else
+    return nil
+  end
+end
+
+local function garbage_collect_light_nodes(pos)
+  --
+  -- Garbage collect light sources as the player moves away from them
+  --
+  for _, player in ipairs(minetest.get_connected_players()) do
+    local light_pos = player_area_match(player, lit)
+    if light_pos and vector.equals(light_pos, pos) and player_light_source(player) > 0 then
+      return
+    end
+  end
+
+  minetest.remove_node(pos)
+end
+
+local function emit_player_light(player)
+  --
+  -- Emit light as a player
+  --
+
+  if player_area_match(player, lit) then
+    return
+  end
+
+  local pos = player_area_match(player, lightable)
+
+  if not pos then
+    return
+  end
+
+  local light = player_light_source(player)
+
+  if light == 0 then
+    return
+  end
+
+  if light > 13 then
+    minetest.set_node(pos, {name = "luplights:light_full"})
+  elseif light > 10 then
+    minetest.set_node(pos, {name = "luplights:light_mid"})
+  elseif light > 7 then
+    minetest.set_node(pos, {name = "luplights:light_dim"})
+  elseif light > 2 then
+    minetest.set_node(pos, {name = "luplights:light_faint"})
+  end
+end
+
+local function register_light_node(name, def)
   --
   -- Register a light node
   --
@@ -22,132 +137,14 @@ function luplights.register_light_node(name, def)
   })
 end
 
-function luplights.inventory_light_source(player)
-  --
-  -- Returns eligibile inventory light source values
-  --
-  if player:get_inventory():contains_item("main", "luplights:lantern") then
-    return minetest.registered_nodes["luplights:lantern"].light_source
-  else
-    return 0
-  end
-end
-
-function luplights.wielded_light_source(player)
-  --
-  -- Return the light source value of the wielded item
-  --
-  local wielded = minetest.registered_nodes[player:get_wielded_item():get_name()]
-  return wielded and wielded.light_source or 0
-end
-
-function luplights.player_light_source(player)
-  --
-  -- Return the effective light source value for the player
-  --
-  local inventory = luplights.inventory_light_source(player)
-
-  if inventory == minetest.LIGHT_MAX then
-    return inventory
-  end
-
-  local wielded = luplights.wielded_light_source(player)
-
-  if wielded > inventory then
-    return wielded
-  else
-    return inventory
-  end
-end
-
-function luplights.garbage_collect_light_nodes(pos)
-  --
-  -- Garbage collect light sources as the player moves away from them
-  --
-  for _, player in ipairs(minetest.get_connected_players()) do
-    local light_pos = luplights.player_area_match(player, luplights.lit)
-    if light_pos and vector.equals(light_pos, pos) and luplights.player_light_source(player) > 0 then
-      return
-    end
-  end
-
-  minetest.remove_node(pos)
-end
-
-function luplights.lightable(pos)
-  --
-  -- Can a light block be placed here
-  --
-  return minetest.get_node(pos).name == "air"
-end
-
-function luplights.lit(pos)
-  --
-  -- This area is lit
-  --
-  local name = minetest.get_node(pos).name
-
-  return (
-    name == "luplights:light_full" or name == "luplights:light_mid" or
-    name == "luplights:light_dim" or name == "luplights:light_faint"
-  )
-end
-
-
-function luplights.player_area_match(player, matches)
-  --
-  -- Return a position that the match function returns true on
-  --
-  local pos = vector.round(player:get_pos())
-  pos.y = pos.y + 1
-
-  if matches(pos) then
-    return pos
-  else
-    return nil
-  end
-end
-
-function luplights.emit_player_light(player)
-  --
-  -- Emit light as a player
-  --
-
-  if luplights.player_area_match(player, luplights.lit) then
-    return
-  end
-
-  local pos = luplights.player_area_match(player, luplights.lightable)
-
-  if not pos then
-    return
-  end
-
-  local light = luplights.player_light_source(player)
-
-  if light == 0 then
-    return
-  end
-
-  if light > 13 then
-    minetest.set_node(pos, {name = "luplights:light_full"})
-  elseif light > 10 then
-    minetest.set_node(pos, {name = "luplights:light_mid"})
-  elseif light > 7 then
-    minetest.set_node(pos, {name = "luplights:light_dim"})
-  elseif light > 2 then
-    minetest.set_node(pos, {name = "luplights:light_faint"})
-  end
-end
-
 -------------------------------------------------------------------------------
 -- Register nodes and callbaks ------------------------------------------------
 -------------------------------------------------------------------------------
 
-luplights.register_light_node("luplights:light_faint", {light_source = 4})
-luplights.register_light_node("luplights:light_dim", {light_source = 8})
-luplights.register_light_node("luplights:light_mid", {light_source = 12})
-luplights.register_light_node("luplights:light_full", {light_source = minetest.LIGHT_MAX})
+register_light_node("luplights:light_faint", {light_source = 4})
+register_light_node("luplights:light_dim", {light_source = 8})
+register_light_node("luplights:light_mid", {light_source = 12})
+register_light_node("luplights:light_full", {light_source = minetest.LIGHT_MAX})
 
 minetest.register_node("luplights:lantern", {
   description = "Lantern",
@@ -176,7 +173,7 @@ minetest.register_craft({
 })
 
 minetest.register_abm({
-  action = luplights.garbage_collect_light_nodes,
+  action = garbage_collect_light_nodes,
   interval = 1, chance = 1, nodenames = {
     "luplights:light_faint",
     "luplights:light_dim",
@@ -188,8 +185,7 @@ minetest.register_abm({
 minetest.register_globalstep(
   function()
     for _, player in ipairs(minetest.get_connected_players()) do
-      luplights.emit_player_light(player)
+      emit_player_light(player)
     end
   end
 )
-

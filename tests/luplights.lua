@@ -3,72 +3,62 @@ dofile("./mocks/minetest.lua")
 dofile("./mocks/vector.lua")
 dofile("./mods/luplights/init.lua")
 --
--- Test module
+-- Air stays air with no light source
 --
-assert(luplights, "luplights should exist")
+player.pos = {x = 0, y = 0, z = 0}
+minetest.connected_players = {player}
+minetest.globalstep()
+minetest.abm()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "air", "should be air")
 --
--- Test lightable
+-- Lightable area is lit with inventory light
 --
-assert(not luplights.lightable(minetest.mock_pos.dirt), "should not be able to light dirt")
-assert(luplights.lightable(minetest.mock_pos.air), "should be able to light air")
-assert(not luplights.lightable(minetest.mock_pos.light_faint), "should be able to light luplights:light_faint")
-assert(not luplights.lightable(minetest.mock_pos.light_dim), "should be able to light luplights:light_dim")
-assert(not luplights.lightable(minetest.mock_pos.light_mid), "should be able to light luplights:light_mid")
-assert(not luplights.lightable(minetest.mock_pos.light_full), "should be able to light luplights:light_full")
---
--- Test lit
---
-assert(not luplights.lit(minetest.mock_pos.dirt), "dirt shouldn't be lit")
-assert(not luplights.lit(minetest.mock_pos.air), "air shouldn't be lit")
-assert(luplights.lit(minetest.mock_pos.light_faint), "luplights:light_faint should be lit")
-assert(luplights.lit(minetest.mock_pos.light_dim), "luplights:light_dim should be lit")
-assert(luplights.lit(minetest.mock_pos.light_mid), "luplights:light_mid should be lit")
-assert(luplights.lit(minetest.mock_pos.light_full), "luplights:light_full should be lit")
---
--- Test wielded_light_source
---
-player.inventory.wielded = {
-  get_name = function()
-    return "luplights:lantern"
-  end
-}
-assert(minetest.LIGHT_MAX == luplights.wielded_light_source(player), "lantern should set wielded light to max")
-player.inventory.wielded = {
-  get_name = function()
-    return "foo"
-  end
-}
-assert(0 == luplights.wielded_light_source(player), "no item should be wielded")
---
--- Test inventory_light_source
---
-player.inventory.main["luplights:lantern"] = true
-assert(minetest.LIGHT_MAX == luplights.inventory_light_source(player), "lantern should set inventory light to max")
-player.inventory["main"]["luplights:lantern"] = false
-assert(0 == luplights.inventory_light_source(player), "0 if lantern not present")
---
--- Test player_light_source
---
-assert(0 == luplights.player_light_source(player), "nothing should be emiting light")
 player.inventory["main"]["luplights:lantern"] = true
-assert(minetest.LIGHT_MAX == luplights.player_light_source(player), "lantern should be emiting light")
+minetest.globalstep()
+minetest.abm()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "luplights:light_full", "should be a light block")
+--
+-- Clean up light when done
+--
 player.inventory["main"]["luplights:lantern"] = false
-assert(0 == luplights.player_light_source(player), "nothing should be emiting light")
-player.inventory.wielded = {
-  get_name = function()
-    return "luplights:lantern"
-  end
-}
-assert(minetest.LIGHT_MAX == luplights.player_light_source(player), "wielded should be emiting light")
+minetest.globalstep()
+minetest.abm()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "air", "should be air")
 --
--- Test register_light_node
+-- Light from wielded item
 --
-luplights.register_light_node("test:test_1")
-assert(minetest.registered_nodes["test:test_1"].drawtype == "airlike", "light nodes should be airlike")
-assert(minetest.registered_nodes["test:test_1"].light_source == 4, "light nodes should default to 4")
-luplights.register_light_node("test:test_1", {light_source = 10})
-assert(minetest.registered_nodes["test:test_1"].drawtype == "airlike", "light nodes should be airlike")
-assert(minetest.registered_nodes["test:test_1"].light_source == 10, "light nodes should setable")
+player.inventory.wielded = {get_name = function() return "default:torch" end}
+minetest.globalstep()
+minetest.abm()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "luplights:light_mid", "should be a light block")
+--
+-- Should clear up when out of hand
+--
+player.inventory.wielded = nil
+minetest.globalstep()
+minetest.abm()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "air", "should be air")
+--
+-- Light from both
+--
+player.inventory.wielded = {get_name = function() return "default:torch" end}
+player.inventory["main"]["luplights:lantern"] = true
+minetest.globalstep()
+minetest.abm()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "luplights:light_full", "should be a light block")
+--
+-- Cannot light area that isn't lightable
+--
+minetest.set_node({x = 0, y = 1, z = 0}, {name="dirt"})
+minetest.globalstep()
+assert(minetest.get_node({x = 0, y = 0, z = 0}).name == "air", "should be air")
+assert(minetest.get_node({x = 0, y = 1, z = 0}).name == "dirt", "shouldn't be lightable")
 --
 -- Done!
 --
