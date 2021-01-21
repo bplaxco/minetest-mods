@@ -91,7 +91,6 @@ local function emit_player_light(player)
   --
   -- Emit light as a player
   --
-
   if player_area_match(player, lit) then
     return
   end

@@ -1,12 +1,18 @@
-dofile("./mocks/player.lua")
-dofile("./mocks/minetest.lua")
+dofile("./tests/mocks/player.lua")
+dofile("./tests/mocks/minetest.lua")
 dofile("./mods/lupsyringe/init.lua")
+dofile("./tests/lib/assert.lua")
+
 --
 -- Test Register Tool
 --
-assert(minetest.registered_tools["lupsyringe:syringe_health"].description == "Health Syringe", "should have the right description")
-assert(minetest.registered_tools["lupsyringe:syringe_poison"].description == "Poison Syringe", "should have the right description")
-assert(minetest.registered_tools["lupsyringe:syringe_empty"].description == "Empty Syringe", "should have the right description")
+local function tool_desc(tool_name)
+  return minetest.registered_tools[tool_name].description
+end
+
+assert_equal(tool_desc("lupsyringe:syringe_health"), "Health Syringe")
+assert_equal(tool_desc("lupsyringe:syringe_poison"), "Poison Syringe")
+assert_equal(tool_desc("lupsyringe:syringe_empty"), "Empty Syringe")
 --
 -- Done!
 --

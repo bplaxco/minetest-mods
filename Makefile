@@ -14,4 +14,4 @@ link: linkmods
 
 .PHONY: test
 test:
-	@for test_file in $$(find tests -name '*.lua'); do lua $$test_file; done
+	@for test_file in $$(ls ./tests/*.lua); do lua $$test_file; done
