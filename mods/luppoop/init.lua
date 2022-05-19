@@ -1,5 +1,5 @@
 local poop_interval = 600
-local poop_to_fertalize = 3
+local poop_to_fertilize = 3
 
 local function player_is_connected(player)
   --
@@ -42,13 +42,13 @@ local function queue_poops()
   minetest.after(poop_interval, queue_poops)
 end
 
-local function fertalize(itemstack, user, pointed_thing)
+local function fertilize(itemstack, user, pointed_thing)
   --
-  -- Use $poop_to_fertalize poop to fertalize something
+  -- Use $poop_to_fertilize poop to fertilize something
   --
   -- TODO: support more node types
   --
-  if not pointed_thing or itemstack:get_count() < poop_to_fertalize then
+  if not pointed_thing or itemstack:get_count() < poop_to_fertilize then
     return
   end
 
@@ -58,7 +58,7 @@ local function fertalize(itemstack, user, pointed_thing)
     local is_sapling = node and node.name:match("default:.*sapling")
 
     if is_sapling and default.can_grow(pos) then
-      itemstack:take_item(poop_to_fertalize)
+      itemstack:take_item(poop_to_fertilize)
       default.grow_sapling(pos)
     end
   end
@@ -69,7 +69,7 @@ end
 minetest.register_craftitem("luppoop:poop", {
   description = "Poop",
   inventory_image = "luppoop_poop.png",
-  on_use = fertalize,
+  on_use = fertilize,
 })
 
 queue_poops()

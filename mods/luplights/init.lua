@@ -4,7 +4,7 @@
 
 local function inventory_light_source(player)
   --
-  -- Returns eligibile inventory light source values
+  -- Returns eligible inventory light source values
   --
   if player:get_inventory():contains_item("main", "luplights:lantern") then
     return minetest.registered_nodes["luplights:lantern"].light_source
